@@ -16,7 +16,7 @@ const getData =  async (req, res) => {
       // console.log('response', response.data)
       let contentData = response.data
       let filterContent = contentData.filter(function (data) {
-       return  data.id === 10;
+       return  data.id === 9;
       })
       console.log('filterContent',filterContent)
       res.json(filterContent);
