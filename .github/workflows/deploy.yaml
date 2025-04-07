@@ -1,32 +1,40 @@
-name: Deploy Node.js to EC2
+name: Deploy Node.js App to EC2
 
 on:
   push:
     branches:
-      - main
+      - main  # or your branch name
 
 jobs:
   deploy:
+    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
+      - name: Setup SSH Key
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "$EC2_KEY" > private_key.pem
+          chmod 600 private_key.pem
+        env:
+          EC2_KEY: ${{ secrets.EC2_KEY }}
 
-      - name: Deploy to EC2
+      - name: Deploy via SSH
         run: |
-          ssh ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            cd your-repo || git clone https://github.com/<your-username>/<your-repo>.git
-            cd your-repo
+          ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            # Pull latest code (or clone if not done)
+            cd ~/my-node-app || (git clone https://github.com/avashokkumar/ekcontent.git ~/my-node-app && cd ~/my-node-app)
+
             git pull origin main
+
+            # Install dependencies
             npm install
-            pm2 restart my-app || pm2 start app.js --name my-app
-            pm2 save
+
+            # Optional: build (if using React or TS)
+            # npm run build
+
+            # Restart the app (using pm2 or node)
+            pm2 restart app || pm2 start index.js --name app
           EOF
